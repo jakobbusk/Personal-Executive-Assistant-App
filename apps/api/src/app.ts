@@ -7,6 +7,7 @@ import { logger } from './config/logger';
 import { env } from './config/env';
 import { defaultLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
+import { doubleCsrfProtection, generateCsrfToken } from './middleware/csrf';
 import { authRouter } from './modules/auth/auth.router';
 import { userRouter } from './modules/user/user.router';
 import { integrationsRouter } from './modules/integrations/integrations.router';
@@ -23,9 +24,15 @@ export function createApp(): express.Application {
   app.use(express.json());
   app.use(cookieParser());
   app.use(defaultLimiter);
+  app.use(doubleCsrfProtection);
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Expose CSRF token for the SPA to read and attach to state-changing requests
+  app.get('/api/csrf-token', (req, res) => {
+    res.json({ csrfToken: generateCsrfToken(req, res) });
   });
 
   app.use('/api/auth', authRouter);

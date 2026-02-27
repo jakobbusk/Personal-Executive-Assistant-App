@@ -3,6 +3,12 @@ import request from 'supertest';
 import { createApp } from '../src/app';
 import type { Application } from 'express';
 
+vi.mock('../src/middleware/csrf', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  doubleCsrfProtection: (_req: any, _res: any, next: any) => next(),
+  generateCsrfToken: vi.fn().mockReturnValue('test-csrf-token'),
+}));
+
 vi.mock('../src/config/logger', () => ({
   logger: {
     info: vi.fn(),
