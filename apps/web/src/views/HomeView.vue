@@ -77,10 +77,18 @@ import { useAuthStore } from '@/stores/auth';
 import { api } from '@/api/client';
 import SummaryCard from '@/components/SummaryCard.vue';
 
+interface Summary {
+  id: string;
+  type: 'daily' | 'weekly';
+  date: string;
+  status: string;
+  content: unknown;
+}
+
 const auth = useAuthStore();
 const loadingDaily = ref(true);
-const latestDaily = ref(null);
-const recentSummaries = ref([]);
+const latestDaily = ref<Summary | null>(null);
+const recentSummaries = ref<Summary[]>([]);
 const stats = ref<{ total: number; daily: number; weekly: number } | null>(null);
 
 const todayFormatted = computed(() => format(new Date(), 'EEEE, MMMM d, yyyy'));
@@ -101,7 +109,7 @@ onMounted(async () => {
     recentSummaries.value = summariesRes.value.data.summaries;
     const today = new Date().toDateString();
     latestDaily.value = recentSummaries.value.find(
-      (s: { type: string; date: string }) => s.type === 'daily' && new Date(s.date).toDateString() === today
+      (s) => s.type === 'daily' && new Date(s.date).toDateString() === today
     ) ?? null;
   }
 
