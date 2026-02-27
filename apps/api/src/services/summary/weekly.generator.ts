@@ -91,8 +91,9 @@ function identifyRiskFlags(events: CalendarEvent[], weekStart: Date, weekEnd: Da
     const dayEvents = events.filter(
       (e) =>
         !e.isAllDay &&
-        e.startTime.getDate() === current.getDate() &&
-        e.startTime.getMonth() === current.getMonth()
+        e.startTime.getFullYear() === current.getFullYear() &&
+        e.startTime.getMonth() === current.getMonth() &&
+        e.startTime.getDate() === current.getDate()
     );
     const dayMeetingHours = dayEvents.reduce(
       (sum, e) => sum + (e.endTime.getTime() - e.startTime.getTime()) / 3_600_000,
@@ -143,8 +144,9 @@ function generateSuggestions(events: CalendarEvent[], weekStart: Date, weekEnd: 
     const dayEvents = events.filter(
       (e) =>
         !e.isAllDay &&
-        e.startTime.getDate() === current.getDate() &&
-        e.startTime.getMonth() === current.getMonth()
+        e.startTime.getFullYear() === current.getFullYear() &&
+        e.startTime.getMonth() === current.getMonth() &&
+        e.startTime.getDate() === current.getDate()
     );
     const dayMeetingHours = dayEvents.reduce(
       (sum, e) => sum + (e.endTime.getTime() - e.startTime.getTime()) / 3_600_000,

@@ -6,7 +6,11 @@ const IV_LENGTH = 16;
 const TAG_LENGTH = 16;
 
 export function encrypt(plaintext: string): string {
-  const key = Buffer.from(env.ENCRYPTION_KEY.slice(0, 32), 'utf-8');
+  const keyStr = env.ENCRYPTION_KEY.slice(0, 32);
+  if (Buffer.byteLength(keyStr, 'utf-8') < 32) {
+    throw new Error('ENCRYPTION_KEY must be at least 32 bytes');
+  }
+  const key = Buffer.from(keyStr, 'utf-8');
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
@@ -15,7 +19,11 @@ export function encrypt(plaintext: string): string {
 }
 
 export function decrypt(ciphertext: string): string {
-  const key = Buffer.from(env.ENCRYPTION_KEY.slice(0, 32), 'utf-8');
+  const keyStr = env.ENCRYPTION_KEY.slice(0, 32);
+  if (Buffer.byteLength(keyStr, 'utf-8') < 32) {
+    throw new Error('ENCRYPTION_KEY must be at least 32 bytes');
+  }
+  const key = Buffer.from(keyStr, 'utf-8');
   const buf = Buffer.from(ciphertext, 'base64');
   const iv = buf.subarray(0, IV_LENGTH);
   const tag = buf.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
