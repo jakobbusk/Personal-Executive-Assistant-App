@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { prisma } from '../../db/prisma';
 import { env } from '../../config/env';
@@ -30,9 +30,8 @@ export const authService = {
       user = await prisma.user.create({ data: { email: data.email } });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const jwtToken = jwt.sign({ userId: user.id, email: user.email }, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN as any,
+      expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'],
     });
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
