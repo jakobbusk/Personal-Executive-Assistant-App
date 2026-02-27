@@ -60,7 +60,15 @@ import { ref, watch, onMounted } from 'vue';
 import { api } from '@/api/client';
 import SummaryCard from '@/components/SummaryCard.vue';
 
-const summaries = ref([]);
+interface Summary {
+  id: string;
+  type: 'daily' | 'weekly';
+  date: string;
+  status: string;
+  content: unknown;
+}
+
+const summaries = ref<Summary[]>([]);
 const loading = ref(true);
 const total = ref(0);
 const offset = ref(0);

@@ -100,8 +100,24 @@ import { ref, onMounted } from 'vue';
 import { api } from '@/api/client';
 import { format } from 'date-fns';
 
-const feeds = ref([]);
-const items = ref([]);
+interface Feed {
+  id: string;
+  title?: string;
+  url: string;
+  category?: string;
+}
+
+interface NewsItem {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  feed?: { category?: string };
+  publishedAt?: string;
+}
+
+const feeds = ref<Feed[]>([]);
+const items = ref<NewsItem[]>([]);
 const showAddFeed = ref(false);
 const newFeed = ref({ url: '', category: '' });
 

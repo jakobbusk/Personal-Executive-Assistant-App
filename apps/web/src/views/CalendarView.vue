@@ -39,9 +39,20 @@ import { api } from '@/api/client';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+interface ChartData {
+  labels: string[];
+  datasets: { data: number[]; backgroundColor: string; borderRadius: number }[];
+}
+
+interface Stats {
+  total: number;
+  daily: number;
+  weekly: number;
+}
+
 const loading = ref(true);
-const chartData = ref(null);
-const stats = ref(null);
+const chartData = ref<ChartData | null>(null);
+const stats = ref<Stats | null>(null);
 
 const chartOptions = {
   responsive: true,
