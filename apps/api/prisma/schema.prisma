@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  name             String?
+  timezone         String    @default("UTC")
+  emailPreferences Json      @default("{}")
+  scheduleConfig   Json      @default("{}")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sessions         Session[]
+  integrations     Integration[]
+  rssFeeds         RssFeed[]
+  summaries        Summary[]
+  deliveryLogs     DeliveryLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Integration {
+  id           String   @id @default(uuid())
+  userId       String
+  provider     String   // "google_calendar" | "microsoft_365"
+  status       String   @default("pending") // "active" | "error" | "pending"
+  lastSyncAt   DateTime?
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens           IntegrationToken[]
+  calendarAccounts CalendarAccount[]
+  syncLogs         SyncLog[]
+
+  @@unique([userId, provider])
+  @@map("integrations")
+}
+
+model IntegrationToken {
+  id            String      @id @default(uuid())
+  integrationId String
+  tokenType     String      // "access" | "refresh"
+  encryptedValue String
+  expiresAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@map("integration_tokens")
+}
+
+model CalendarAccount {
+  id            String   @id @default(uuid())
+  integrationId String
+  externalId    String
+  name          String
+  email         String?
+  isPrimary     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  integration     Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  calendarEvents  CalendarEvent[]
+
+  @@map("calendar_accounts")
+}
+
+model CalendarEvent {
+  id                String   @id @default(uuid())
+  calendarAccountId String
+  externalId        String
+  title             String
+  description       String?
+  location          String?
+  startTime         DateTime
+  endTime           DateTime
+  isAllDay          Boolean  @default(false)
+  attendees         Json     @default("[]")
+  metadata          Json     @default("{}")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  calendarAccount CalendarAccount @relation(fields: [calendarAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([calendarAccountId, externalId])
+  @@map("calendar_events")
+}
+
+model RssFeed {
+  id          String   @id @default(uuid())
+  userId      String
+  url         String
+  title       String?
+  description String?
+  category    String?
+  isActive    Boolean  @default(true)
+  lastFetchAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rssItems RssItem[]
+
+  @@unique([userId, url])
+  @@map("rss_feeds")
+}
+
+model RssItem {
+  id          String   @id @default(uuid())
+  feedId      String
+  externalId  String?
+  url         String
+  title       String
+  description String?
+  content     String?
+  author      String?
+  publishedAt DateTime?
+  urlHash     String
+  isSaved     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  feed RssFeed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+
+  @@unique([feedId, urlHash])
+  @@map("rss_items")
+}
+
+model Summary {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // "daily" | "weekly"
+  date        DateTime
+  status      String   @default("pending") // "pending" | "generated" | "sent" | "error"
+  content     Json     @default("{}")
+  generatedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections     SummarySection[]
+  deliveryLogs DeliveryLog[]
+
+  @@map("summaries")
+}
+
+model SummarySection {
+  id        String   @id @default(uuid())
+  summaryId String
+  type      String   // "schedule" | "conflicts" | "news" | "priorities" | etc.
+  title     String
+  content   Json
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  summary Summary @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+
+  @@map("summary_sections")
+}
+
+model DeliveryLog {
+  id         String   @id @default(uuid())
+  userId     String
+  summaryId  String?
+  channel    String   // "email"
+  status     String   // "pending" | "sent" | "failed"
+  recipient  String
+  error      String?
+  sentAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  summary Summary? @relation(fields: [summaryId], references: [id], onDelete: SetNull)
+
+  @@map("delivery_logs")
+}
+
+model JobRun {
+  id          String   @id @default(uuid())
+  jobName     String
+  status      String   // "pending" | "running" | "success" | "failed"
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  error       String?
+  metadata    Json     @default("{}")
+
+  @@map("job_runs")
+}
+
+model SyncLog {
+  id            String   @id @default(uuid())
+  integrationId String
+  type          String   // "calendar" | "rss"
+  status        String   // "success" | "error"
+  message       String?
+  itemsSynced   Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@map("sync_logs")
+}
